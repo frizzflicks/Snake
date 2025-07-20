@@ -2,11 +2,17 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL.h>
 #include <iostream>
-
+#include <random>
+#include <set>
+#include <vector>
 using namespace std;
 
 const int SCREEN_HEIGHT = 700;
 const int SCREEN_WIDTH = 700;
+
+SDL_Rect appleRect;
+
+bool isAlive = true;
 
 // The window we are going to render our snake in
 SDL_Window *window = NULL;
@@ -35,6 +41,18 @@ public:
     // constructor
     Snake();
 
+    // another constructor with params
+    Snake(int xPosP, int yPosP);
+
+    // prev locaton
+    int prevX, prevY;
+
+    // set location
+    void setLocation(int x, int y);
+
+    // set collider location
+    void setColloc(int x, int y);
+
     // helps the parts of snake to move
     void moveCubes(SDL_Event &e);
 
@@ -50,7 +68,7 @@ public:
     void setVelocity(int x, int y);
     int getWidth();
     int getHeight();
-    SDL_Rect getCollider();
+    SDL_Rect &getCollider();
     int getXPos();
     int getYPos();
     void move();
@@ -69,6 +87,7 @@ void coutError(const char *str)
     cout << str << endl;
 }
 
+vector<Snake> SnakeParts = {};
 bool init()
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -90,13 +109,97 @@ bool init()
     }
     return true;
 }
+int mRandom(int low, int high, const std::set<int> &exclude)
+{
+    static std::mt19937 gen(std::random_device{}());
+    std::uniform_int_distribution<> dist(low, high);
 
+    int result;
+    do
+    {
+        result = dist(gen);
+    } while (exclude.count(result)); // Retry if it's excluded
+
+    return result;
+}
+
+void generateApple(Snake &s)
+{
+    set<int> excluded = {};
+    int xPosA = mRandom(0, SCREEN_WIDTH, excluded);
+    for(auto s:SnakeParts)
+    {
+    if (xPosA == s.getXPos())
+        excluded = {s.getYPos()};
+    int yPosA = mRandom(0, SCREEN_HEIGHT, excluded);
+    xPosA -= (xPosA % 35);
+    yPosA -= (yPosA % 35);
+    appleRect = {xPosA, yPosA, s.getWidth(), s.getHeight()};
+    }
+}
+bool checkCollision(const SDL_Rect &a, const SDL_Rect &b)
+{
+    return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y);
+}
+
+Snake::Snake(int xPosP, int yPosP)
+{
+
+    width = 35;
+    height = 35;
+    collider.h = 35;
+    collider.w = 35;
+    xVel = 0;
+    yVel = 0;
+    xPos = xPosP;
+    yPos = yPosP;
+    collider.x = xPosP;
+    collider.y = yPosP;
+    Snake::index++;
+}
+
+// set location
+void Snake::setLocation(int x, int y)
+{
+    xPos = x;
+    yPos = y;
+    setColloc(x, y);
+}
+
+// set collider location
+void Snake::setColloc(int x, int y)
+{
+    collider.x = x;
+    collider.y = y;
+}
+void manageGrowth(Snake &s)
+{
+    generateApple(s);
+    Snake *sn = new Snake(s.prevX, s.prevY);
+    SnakeParts.push_back(*sn);
+}
+
+void updateLoc(Snake &s, int index)
+{
+   if(index > 0 && isAlive)
+   {
+        s.prevX = s.getXPos();
+        s.prevY = s.getYPos();
+        s.setLocation(SnakeParts[index - 1].prevX, SnakeParts[index - 1].prevY);
+
+   }
+}
 bool renderLoop()
 {
     SDL_Event e;
     bool quit = false;
     Snake s;
-
+    SnakeParts.push_back(s);
+    generateApple(SnakeParts[0]);
     while (!quit)
     {
         while (SDL_PollEvent(&e))
@@ -109,49 +212,41 @@ bool renderLoop()
                 switch (e.key.keysym.sym)
                 {
                 case SDLK_UP:
-                    s.setVelocity(0, -35);
+                    SnakeParts[0].setVelocity(0, -35);
                     break;
                 case SDLK_DOWN:
-                    s.setVelocity(0, 35);
+                    SnakeParts[0].setVelocity(0, 35);
                     break;
                 case SDLK_LEFT:
-                    s.setVelocity(-35, 0);
+                    SnakeParts[0].setVelocity(-35, 0);
                     break;
                 case SDLK_RIGHT:
-                    s.setVelocity(35, 0);
+                    SnakeParts[0].setVelocity(35, 0);
                     break;
                 }
             }
         }
-        s.move();
-
+        if (isAlive)
+            SnakeParts[0].move();
         SDL_RenderClear(renderer);
-
-        // create new surface every frame
-        SDL_Surface *loadedSurface = SDL_CreateRGBSurface(
-            0,
-            s.getWidth(),
-            s.getHeight(),
-            32,
-            0x00FF0000,
-            0x0000FF00,
-            0x000000FF,
-            0xFF000000);
-
-        if (!loadedSurface)
-        {
-            coutError("Failed to create surface!");
-            return false;
-        }
-
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Background: black
         SDL_RenderClear(renderer);
-
+        
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Snake: green
-        SDL_Rect destRect = s.getCollider();
-        SDL_RenderFillRect(renderer, &destRect);
-
+        int index = 0;
+        for (auto &part : SnakeParts)
+        {
+            updateLoc(part, index);
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+            SDL_RenderFillRect(renderer, &part.getCollider());
+            index++;
+        }
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red apple
+        SDL_RenderFillRect(renderer, &appleRect);
         SDL_RenderPresent(renderer);
+        bool iscol = checkCollision(SnakeParts[0].getCollider(), appleRect);
+        if (iscol)
+            manageGrowth(SnakeParts[index - 1]);
         SDL_Delay(250);
     }
 
@@ -177,17 +272,34 @@ void close()
 
 bool isColliding()
 {
-    return false;
+    bool returnvalue = false;
+    int i = 0;
+    for(auto part: SnakeParts)
+    {
+        if(i!=0)
+        {
+            returnvalue = returnvalue || checkCollision(SnakeParts[0].getCollider(), part.getCollider());
+        }
+        if (returnvalue)
+        {
+            break;
+        }
+        i++;
+    }
+    
+return returnvalue;
 }
 
 Snake::Snake()
 {
-    width = 35; 
+    width = 35;
     height = 35;
     collider.h = 35;
     collider.w = 35;
-    xPos = 0;
-    yPos = 0;
+    xPos = 105;
+    yPos = 105;
+    collider.x = 105;
+    collider.y = 105;
     xVel = 0;
     yVel = 0;
 }
@@ -199,18 +311,20 @@ void Snake::setVelocity(int x, int y)
 
 void Snake::move()
 {
+    prevX = xPos;
+    prevY = yPos;
     xPos += xVel;
     collider.x += xVel;
     if ((xPos < 0) || (xPos + width) > SCREEN_WIDTH || isColliding())
     {
-        cout << "game over!" << endl;
+        isAlive = false;
     }
 
     yPos += yVel;
     collider.y += yVel;
     if ((yPos < 0) || (yPos + height) > SCREEN_HEIGHT || isColliding())
     {
-        cout << "game over!" << endl;
+        isAlive = false;
     }
 }
 
@@ -224,7 +338,7 @@ int Snake::getHeight()
     return height;
 }
 
-SDL_Rect Snake::getCollider()
+SDL_Rect &Snake::getCollider()
 {
     return collider;
 }
@@ -239,6 +353,8 @@ int Snake::getYPos()
     return yPos;
 }
 
+int Snake::index = 0;
+
 int main(int argc, char *args[])
 {
     if (!init())
@@ -246,7 +362,6 @@ int main(int argc, char *args[])
         coutError("Could not initialize!");
         return -1;
     }
-
     if (!renderLoop())
     {
         coutError("loop failed to run!");
