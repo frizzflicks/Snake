@@ -6,7 +6,7 @@ Edit
 
 A classic Snake game built using **C++** and **SDL2**, featuring dynamic snake movement, apple generation, score tracking, and text rendering.
 
-![Slither Gameplay](https://via.placeholder.com/700x400.png?text=Slither+Gameplay) <!-- Replace with actual screenshot -->
+![Slither Gameplay](https://raw.githubusercontent.com/frizzflicks/Snake/refs/heads/master/play.png)
 
 ---
 
@@ -31,27 +31,32 @@ A classic Snake game built using **C++** and **SDL2**, featuring dynamic snake m
 ```bash
 # Debian/Ubuntu
 sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
+```
 🚀 Build & Run
-bash
+```bash
 Copy
 Edit
 g++ main.cpp -o slither -lSDL2 -lSDL2_ttf -lSDL2_image
 ./slither
+```
 ⌨️ Controls
 Key	Action
+```
 ↑ ↓ ← →	Move Snake
 Enter	Start / Restart
+```
 
 📂 File Structure
-bash
+```bash
 Copy
 Edit
 .
 ├── main.cpp        # Main game code
 ├── text.ttf        # Font used for rendering text
 └── README.md       # This file
+```
 📸 Preview
-<img src="https://via.placeholder.com/400x200.png?text=Score+Display+and+Snake" alt="Score Display" width="400" />
+<img src="https://raw.githubusercontent.com/frizzflicks/Snake/refs/heads/master/play.png" alt="Score Display" width="400" />
 📜 License
 MIT License. Feel free to use and modify.
 
