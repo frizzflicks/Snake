@@ -1,7 +1,3 @@
-
-markdown
-Copy
-Edit
 # 🐍 Slither - SDL2 Snake Game
 
 A classic Snake game built using **C++** and **SDL2**, featuring dynamic snake movement, apple generation, score tracking, and text rendering.
@@ -34,8 +30,6 @@ sudo apt-get install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev
 ```
 🚀 Build & Run
 ```bash
-Copy
-Edit
 g++ main.cpp -o slither -lSDL2 -lSDL2_ttf -lSDL2_image
 ./slither
 ```
@@ -48,8 +42,6 @@ Enter	Start / Restart
 
 📂 File Structure
 ```bash
-Copy
-Edit
 .
 ├── main.cpp        # Main game code
 ├── text.ttf        # Font used for rendering text
@@ -61,4 +53,4 @@ Edit
 MIT License. Feel free to use and modify.
 
 💬 Credits
-Made with 🧠, 🎮 and a lot of debugging by Taranveer (Savy)
+Made with 🧠, 🎮 and a lot of debugging by Taranveer Singh.
