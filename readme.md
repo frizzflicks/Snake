@@ -48,7 +48,7 @@ Enter	Start / Restart
 └── README.md       # This file
 ```
 📸 Preview
-<img src="https://raw.githubusercontent.com/frizzflicks/Snake/refs/heads/master/play.png" alt="Score Display" width="400" />
+[Preview](https://raw.githubusercontent.com/frizzflicks/Snake/refs/heads/master/play.png)
 📜 License
 MIT License. Feel free to use and modify.
 
