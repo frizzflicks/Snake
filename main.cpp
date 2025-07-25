@@ -168,17 +168,22 @@ SDL_Texture *textTex(const std::string &textureText, SDL_Color textColor)
 
 void generateApple(Snake &s)
 {
-    set<int> excluded = {};
-    int xPosA = mRandom(0, SCREEN_WIDTH, excluded);
-    for (auto s : SnakeParts)
+    set<pair<int, int>> used;
+    for (auto &part : SnakeParts)
     {
-        if (xPosA == s.getXPos())
-            excluded = {s.getYPos()};
-        int yPosA = mRandom(0, SCREEN_HEIGHT, excluded);
+        used.insert({part.getXPos(), part.getYPos()});
+    }
+
+    int xPosA, yPosA;
+    do
+    {
+        xPosA = mRandom(0, SCREEN_WIDTH - 35, {});
+        yPosA = mRandom(0, SCREEN_HEIGHT - 35, {});
         xPosA -= (xPosA % 35);
         yPosA -= (yPosA % 35);
-        appleRect = {xPosA, yPosA, s.getWidth(), s.getHeight()};
-    }
+    } while (used.count({xPosA, yPosA}));
+
+    appleRect = {xPosA, yPosA, s.getWidth(), s.getHeight()};
 }
 bool checkCollision(const SDL_Rect &a, const SDL_Rect &b)
 {
@@ -222,8 +227,8 @@ void Snake::setColloc(int x, int y)
 void manageGrowth(Snake &s)
 {
     generateApple(s);
-    Snake *sn = new Snake(s.prevX, s.prevY);
-    SnakeParts.push_back(*sn);
+    Snake sn(s.prevX, s.prevY);
+    SnakeParts.push_back(sn);
 }
 
 void updateLoc(Snake &s, int index)
@@ -282,7 +287,6 @@ bool renderLoop()
 
         if (isAlive)
             SnakeParts[0].move();
-        SDL_RenderClear(renderer);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Background: black
         SDL_RenderClear(renderer);
         if (!game_start)
@@ -315,6 +319,7 @@ bool renderLoop()
             SDL_Texture *scoreTex = textTex(to_string(score), yellow);
             SDL_Rect destRectScore = {600, 600, 100, 100};
             SDL_RenderCopy(renderer, scoreTex, NULL, &destRectScore);
+            SDL_DestroyTexture(scoreTex);
 
             int index = 0;
             for (auto &part : SnakeParts)
@@ -331,7 +336,7 @@ bool renderLoop()
             if (iscol)
                 manageGrowth(SnakeParts[index - 1]);
         }
-        SDL_Delay(100);
+        SDL_Delay(149);
     }
 
     return true;
@@ -350,9 +355,14 @@ void close()
         SDL_DestroyWindow(window);
         window = nullptr;
     }
-
+    if (gFont)
+    {
+        TTF_CloseFont(gFont);
+        gFont = nullptr;
+    }
+    TTF_Quit(); 
     SDL_Quit();
-}
+} 
 
 bool isColliding()
 {
